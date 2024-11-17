@@ -9,15 +9,17 @@ import PieChart from "../components/PieChart/PieChart";
 import BarChart from "../components/BarChart/BarChart";
 
 export default function Home() {
+  // States
   const [balance, setBalance] = useState(0);
   const [expense, setExpense] = useState(0);
   const [expenseList, setExpenseList] = useState([]);
   const [isMounted, setIsMounted] = useState(false);
 
-  //Show hide modals
+  // Modal visibility states
   const [isOpenExpense, setIsOpenExpense] = useState(false);
   const [isOpenBalance, setIsOpenBalance] = useState(false);
 
+  // Category tracking states
   const [categorySpends, setCategorySpends] = useState({
     food: 0,
     entertainment: 0,
@@ -29,96 +31,66 @@ export default function Home() {
     travel: 0,
   });
 
+  // Initialize balance and expense list from localStorage
   useEffect(() => {
-    //Check localStorage
     const localBalance = localStorage.getItem("balance");
-
-    if (localBalance) {
-      setBalance(Number(localBalance));
-    } else {
-      setBalance(5000);
-      localStorage.setItem("balance", 5000);
-    }
+    setBalance(localBalance ? Number(localBalance) : 5000);
 
     const items = JSON.parse(localStorage.getItem("expenses"));
-
     setExpenseList(items || []);
-    setIsMounted(true);
+
+    setIsMounted(true); // Mark component as mounted
   }, []);
 
-  // saving expense list in localStorage
+  // Update localStorage and derived states when expenseList changes
   useEffect(() => {
-    if (expenseList.length > 0 || isMounted) {
+    if (isMounted) {
       localStorage.setItem("expenses", JSON.stringify(expenseList));
     }
 
-    if (expenseList.length > 0) {
-      setExpense(
-        expenseList.reduce(
-          (accumulator, currentValue) =>
-            accumulator + Number(currentValue.price),
-          0
-        )
-      );
-    } else {
-      setExpense(0);
-    }
+    // Calculate total expense
+    const totalExpense = expenseList.reduce(
+      (acc, item) => acc + Number(item.price),
+      0
+    );
+    setExpense(totalExpense);
 
-    let foodSpends = 0,
-      entertainmentSpends = 0,
-      travelSpends = 0;
-    let foodCount = 0,
-      entertainmentCount = 0,
-      travelCount = 0;
-
-    expenseList.forEach((item) => {
-      if (item.category == "food") {
-        foodSpends += Number(item.price);
-        foodCount++;
-      } else if (item.category == "entertainment") {
-        entertainmentSpends += Number(item.price);
-        entertainmentCount++;
-      } else if (item.category == "travel") {
-        travelSpends += Number(item.price);
-        travelCount++;
+    // Calculate category spends and counts
+    const categoryData = expenseList.reduce(
+      (acc, item) => {
+        acc.spends[item.category] += Number(item.price);
+        acc.counts[item.category]++;
+        return acc;
+      },
+      {
+        spends: { food: 0, entertainment: 0, travel: 0 },
+        counts: { food: 0, entertainment: 0, travel: 0 },
       }
-    });
+    );
 
-    setCategorySpends({
-      food: foodSpends,
-      travel: travelSpends,
-      entertainment: entertainmentSpends,
-    });
+    setCategorySpends(categoryData.spends);
+    setCategoryCount(categoryData.counts);
+  }, [expenseList, isMounted]);
 
-    setCategoryCount({
-      food: foodCount,
-      travel: travelCount,
-      entertainment: entertainmentCount,
-    });
-  }, [expenseList]);
-
-  // saving balance in localStorage
+  // Save balance to localStorage when it changes
   useEffect(() => {
     if (isMounted) {
       localStorage.setItem("balance", balance);
     }
-  }, [balance]);
+  }, [balance, isMounted]);
 
   return (
     <div className={styles.container}>
       <h1>Expense Tracker</h1>
 
-      {/* Cards and pie chart wrapper */}
-
+      {/* Cards and Pie Chart Section */}
       <div className={styles.cardsWrapper}>
         <Card
           title="Wallet Balance"
           money={balance}
           buttonText="+ Add Income"
           buttonType="success"
-          handleClick={() => {
-            setIsOpenBalance(true);
-          }}
+          handleClick={() => setIsOpenBalance(true)}
         />
 
         <Card
@@ -127,9 +99,7 @@ export default function Home() {
           buttonText="+ Add Expense"
           buttonType="failure"
           success={false}
-          handleClick={() => {
-            setIsOpenExpense(true);
-          }}
+          handleClick={() => setIsOpenExpense(true)}
         />
 
         <PieChart
@@ -141,7 +111,7 @@ export default function Home() {
         />
       </div>
 
-      {/* Transactions and bar chart wrapper */}
+      {/* Transactions and Bar Chart Section */}
       <div className={styles.transactionsWrapper}>
         <TransactionList
           transactions={expenseList}

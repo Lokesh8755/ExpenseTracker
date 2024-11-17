@@ -1,16 +1,17 @@
-import React, { PureComponent } from "react";
+import PropTypes from "prop-types";
 import {
   PieChart,
   Pie,
-  Sector,
   Cell,
   ResponsiveContainer,
   Legend,
 } from "recharts";
 
+// Constants
 const COLORS = ["#A000FF", "#FF9304", "#FDE006"];
-
 const RADIAN = Math.PI / 180;
+
+// Render label for each pie slice
 const renderCustomizedLabel = ({
   cx,
   cy,
@@ -18,7 +19,6 @@ const renderCustomizedLabel = ({
   innerRadius,
   outerRadius,
   percent,
-  index,
 }) => {
   const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -37,10 +37,11 @@ const renderCustomizedLabel = ({
   );
 };
 
+// PieChartComponent
 export default function PieChartComponent({ data }) {
   return (
     <ResponsiveContainer width="100%" height={250}>
-      <PieChart width={400} height={400}>
+      <PieChart>
         <Pie
           data={data}
           cx="50%"
@@ -52,7 +53,10 @@ export default function PieChartComponent({ data }) {
           dataKey="value"
         >
           {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            <Cell
+              key={`cell-${index}`}
+              fill={COLORS[index % COLORS.length]}
+            />
           ))}
         </Pie>
         <Legend iconType="rect" verticalAlign="bottom" />
@@ -60,3 +64,13 @@ export default function PieChartComponent({ data }) {
     </ResponsiveContainer>
   );
 }
+
+// PropTypes validation
+PieChartComponent.propTypes = {
+  data: PropTypes.arrayOf(
+    PropTypes.shape({
+      name: PropTypes.string.isRequired, // Name of the data item
+      value: PropTypes.number.isRequired, // Value of the data item
+    })
+  ).isRequired,
+};
